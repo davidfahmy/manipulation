@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>هل بيتم التلاعب بيك؟ | د. ديفيد فهمي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F7F5EF;--ink:#111827;--teal:#0F766E;--amber:#F59E0B}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Cairo,Tahoma,sans-serif;font-weight:700}
+body{background:var(--paper);color:var(--ink);min-height:100vh;display:flex;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:560px;border-top:8px solid var(--teal);padding-top:22px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--teal);margin-bottom:14px}
+.bar{height:8px;background:#e4e1d8;border-radius:8px;overflow:hidden;margin-bottom:26px}
+.bar i{display:block;height:100%;width:0;background:var(--teal);transition:width .3s}
+h1{font-size:34px;line-height:1.4;margin-bottom:14px}
+h2{font-size:26px;line-height:1.5;margin-bottom:8px}
+p,.sub{font-size:18px;line-height:1.9}
+.emo{font-size:64px;margin-bottom:10px}
+.pill{display:inline-block;background:var(--amber);padding:6px 20px;border-radius:40px;font-size:16px;margin:10px 0}
+.ex{background:#fff;border-right:6px solid var(--teal);border-radius:12px;padding:14px 18px;margin:14px 0 22px;font-size:17px;line-height:1.8}
+.opt,.btn{display:block;width:100%;text-align:right;font-size:18px;padding:15px 18px;margin-top:10px;border-radius:14px;border:2px solid #d9d5c8;background:#fff;color:var(--ink);cursor:pointer}
+.opt:hover,.opt:focus{border-color:var(--teal);outline:none}
+.btn{background:var(--teal);color:#fff;border-color:var(--teal);text-align:center;margin-top:18px}
+.btn:disabled{opacity:.5}
+label{display:block;font-size:16px;margin:16px 0 6px}
+input[type=text],input[type=email],input[type=tel]{width:100%;padding:14px;font-size:18px;border-radius:12px;border:2px solid #d9d5c8;background:#fff;direction:ltr;text-align:left}
+input:focus{border-color:var(--teal);outline:none}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-top:16px;line-height:1.7}
+.chk input{margin-top:6px;width:18px;height:18px}
+.err{color:#b91c1c;font-size:15px;margin-top:10px;min-height:20px}
+.note{font-size:13px;color:#555;margin-top:22px;line-height:1.7}
+.foot{text-align:center;font-size:14px;margin:30px 0 10px;padding-top:14px;border-top:2px solid #e4e1d8}
+.hide{display:none}
+.res{background:var(--teal);color:#fff;border-radius:18px;padding:22px;margin:16px 0}
+.score{font-size:54px;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="top"><span id="stepTxt"></span><span>Manipulation Check</span></div>
+  <div class="bar"><i id="prog"></i></div>
+  <div id="view"></div>
+  <div class="foot">د. ديفيد فهمي | <bdi dir="ltr">@dr.davidfahmy</bdi></div>
+</div>
+<script>
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbxtaGRJPSMYTTMuqTxNVwG0z0ktGTA03hlh5SJd2L9h9SawThsVLBQP-OG711-SR05J/exec";
+const QUIZ_NAME = "manipulation";
+const OPTIONS = [["دايماً",3],["كتير",2],["أحياناً",1],["تقريباً أبداً",0]];
+const Q = [
+ ["🛑","لما بتقول «لا» أو بتحط حدودك، بتحس إنك غلطان أو مذنب؟","«بعد كل اللي عملته عشانك؟»"],
+ ["🧠","لما بتفتكر موقف حصل، بيقولك إنه محصلش أو إنك بتتخيل؟","«انت بتتخيل، ده محصلش كده»"],
+ ["💔","لما يتضايق منك، بيسكت أو يسخر أو يتجاهلك بدل ما يقولك ضايقه إيه؟",""],
+ ["👀","بتحس إنه دايماً الطرف المظلوم، واللوم دايماً بيرجعلك؟","«انت دايماً بتظلمني»"],
+ ["💔","في الأول كان اهتمام وهدايا ومشاعر نارية، وبعدين كل ده اتسحب فجأة؟",""],
+ ["👀","بتكتشف بعدين إنه كان مخبي عنك معلومات كانت هتفرق في قرارك؟","«كنت هقولك بعدين»"],
+ ["🛑","بيستخدم مخاوفك أو أسرارك ونقاط ضعفك ضدك وقت الخلاف؟",""],
+ ["🧠","بيخليك تصدق إنك مش هتعرف تنجح أو تقرر من غيره؟","«من غيري هتضيع»"],
+ ["🛑","مهما عملت مش كفاية، وكل ما تقرب بيغير توقعاته؟","«كنت فاكر هتعمل أكتر من كده»"]
+];
+const $=id=>document.getElementById(id);
+const view=$("view");let i=0,ans=[];
+function setProg(){ $("prog").style.width=Math.round(i/(Q.length+1)*100)+"%"; }
+function intro(){
+  $("stepTxt").textContent="اختبار سريع • دقيقتين";setProg();
+  view.innerHTML=`<div class="emo">👀</div><h1>هل في حد بيتلاعب بيك وانت مش واخد بالك؟</h1>
+  <p>9 أسئلة بسيطة، جاوب عليها بصراحة مع نفسك وانت بتفكر في علاقة معينة (حب، شغل، صداقة، أو عيلة).</p>
+  <span class="pill">مفيش إجابة صح وغلط</span>
+  <button class="btn" id="go">يلا نبدأ</button>
+  <p class="note">الاختبار ده للتوعية بس، مش تشخيص نفسي ولا بديل عن مختص.</p>`;
+  $("go").onclick=()=>{i=0;ans=[];question();};
+}
+function question(){
+  const q=Q[i];$("stepTxt").textContent=`سؤال ${i+1} من ${Q.length}`;setProg();
+  view.innerHTML=`<div class="emo">${q[0]}</div><h2>${q[1]}</h2>${q[2]?`<div class="ex">${q[2]}</div>`:'<div style="height:14px"></div>'}`+
+   OPTIONS.map((o,k)=>`<button class="opt" data-k="${k}">${o[0]}</button>`).join("");
+  view.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ans[i]=OPTIONS[b.dataset.k][1];i++;i<Q.length?question():form();});
+}
+function form(){
+  $("stepTxt").textContent="خلصت! آخر خطوة";$("prog").style.width="92%";
+  view.innerHTML=`<div class="emo">🤍</div><h2>نتيجتك جاهزة</h2>
+  <p>سيب بياناتك وهتشوف نتيجتك فوراً، وهابعتلك كمان اختبار الـ 3 أسئلة اللي يوضحلك الصورة.</p>
+  <label for="nm">الاسم</label><input type="text" id="nm" autocomplete="name" style="direction:rtl;text-align:right">
+  <label for="em">الإيميل</label><input type="email" id="em" autocomplete="email" placeholder="name@email.com">
+  <label for="wa">رقم الواتساب (بكود الدولة)</label><input type="tel" id="wa" autocomplete="tel" placeholder="+20 100 000 0000">
+  <div class="chk"><input type="checkbox" id="ok"><label for="ok" style="margin:0;font-size:14px">موافق إن د. ديفيد يتواصل معايا على الإيميل أو الواتساب بخصوص نتيجة الاختبار والمحتوى.</label></div>
+  <div class="err" id="err"></div><button class="btn" id="sub">اعرض نتيجتي</button>`;
+  $("sub").onclick=submit;
+}
+function level(s){
+  if(s<=6) return ["لمسات خفيفة أو مفيش","النتيجة بتقول إن العلامات دي مش ظاهرة بشكل كبير في العلاقة اللي فكرت فيها. ده كويس، بس خليك واعي، وثق في إحساسك لو حسيت بحاجة."];
+  if(s<=14) return ["في علامات تستاهل تقف عندها","فيه أكتر من نمط ظهر معاك. ده مش معناه إن حد وحش، لكن معناه إن إحساسك محتاج يتسمع. راجع الأنماط اللي جاوبت عليها بـ«دايماً» و«كتير»."];
+  return ["علامات كتير ومتكررة","الأنماط دي متكررة معاك بشكل واضح. مش ذنبك، ومش معناه إنك ضعيف. أنصحك تتكلم مع شخص موثوق أو مختص، وتبدأ ترجع تثق في إحساسك."];
+}
+async function sendRow(row){
+  const url=ENDPOINT+"?"+new URLSearchParams(row).toString();
+  try{
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),12000);
+    const r=await fetch(url,{method:"GET",redirect:"follow",signal:ctl.signal});clearTimeout(t);
+    const txt=await r.text();
+    return txt.trim()==="saved"?"ok":"unexpected: "+r.status+" "+txt.slice(0,60);
+  }catch(e1){
+    try{ await fetch(url,{method:"GET",mode:"no-cors"}); return "sent-unconfirmed ("+e1.name+")"; }
+    catch(e2){ return "failed: "+e2.name+" "+e2.message; }
+  }
+}
+async function submit(){
+  const nm=$("nm").value.trim(),em=$("em").value.trim(),wa=$("wa").value.replace(/[\s\-()]/g,"");
+  const e=$("err");
+  if(nm.length<2) return e.textContent="اكتب اسمك من فضلك";
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return e.textContent="الإيميل مش مظبوط";
+  if(!/^\+?\d{8,15}$/.test(wa)) return e.textContent="رقم الواتساب مش مظبوط (أرقام بس، ويفضل بكود الدولة)";
+  if(!$("ok").checked) return e.textContent="لازم توافق على التواصل عشان نكمل";
+  const score=ans.reduce((a,b)=>a+b,0),lv=level(score)[0];
+  const row={timestamp:new Date().toISOString(),quiz:QUIZ_NAME,name:nm,email:em,whatsapp:wa,score,level:lv};
+  $("sub").disabled=true;$("sub").textContent="جاري الإرسال...";
+  try{ const L=JSON.parse(localStorage.getItem("leads")||"[]");L.push(row);localStorage.setItem("leads",JSON.stringify(L)); }catch(_){}
+  let st="no-endpoint";
+  if(ENDPOINT){ st=await sendRow(row); }
+  result(score,st);
+}
+function result(score,st){
+  const [t,d]=level(score);$("prog").style.width="100%";$("stepTxt").textContent="نتيجتك";
+  view.innerHTML=`<div class="res"><div class="score">${score} / 27</div><h2 style="margin-top:6px">${t}</h2></div>
+  <p>${d}</p><span class="pill">إحساسك حقيقي، حتى لو أنكروه</span>
+  <p style="margin-top:12px">لو حسيت إن الكلام ده ليك، ابعت كلمة «واعي» على الـ DM على <bdi dir="ltr">@dr.davidfahmy</bdi> وهبعتلك اختبار الـ 3 أسئلة.</p>
+  ${location.hash==="#debug"?`<p class="note" dir="ltr" style="text-align:left">save status: ${st}</p>`:""}
+  <button class="btn" id="again">إعادة الاختبار</button>
+  <p class="note">النتيجة للتوعية فقط ومش تشخيص. لو في خطر أو إيذاء، اتواصل مع مختص أو شخص موثوق فوراً.</p>`;
+  $("again").onclick=intro;
+}
+function admin(){
+  const L=JSON.parse(localStorage.getItem("leads")||"[]");
+  const h=["timestamp","quiz","name","email","whatsapp","score","level"];
+  const csv="\ufeff"+[h.join(",")].concat(L.map(r=>h.map(k=>'"'+String(r[k]).replace(/"/g,'""')+'"').join(","))).join("\n");
+  view.innerHTML=`<h2>بيانات محفوظة في المتصفح ده (${L.length})</h2><button class="btn" id="dl">تحميل CSV</button>`;
+  $("dl").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="leads.csv";a.click();};
+}
+location.hash==="#admin"?admin():intro();
+</script>
+</body>
+</html>
